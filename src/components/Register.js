@@ -34,9 +34,9 @@ function handleSubmit(event) {
             <div className="auth__container">
                 <h1 className="auth__title">Регистрация</h1>
                 <form className="auth__form" onSubmit={handleSubmit}>
-                    <input className="auth__input" type="email" name="email" placeholder="Введите email"
+                    <input className="auth__input" autoComplete='off' type="email" name="email" placeholder="Email"
                            onChange={handleChange}/>
-                    <input className="auth__input" type="password" name="password" placeholder="Введите пароль"
+                    <input className="auth__input" autoComplete='off' type="password" name="password" placeholder="Пароль"
                            onChange={handleChange}/>
                     <button className="auth__submit-button" type="submit">Зарегистрироваться</button>
                 </form>
