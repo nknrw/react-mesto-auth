@@ -1,9 +1,12 @@
 import React from "react";
 import { Link, withRouter } from "react-router-dom";
-import * as auth from "../utils/auth.js";
+// import auth from "../utils/Auth.js";
 
 function Login(props) {
-    const [profileData, setProfileData] = React.useState({})
+    const [profileData, setProfileData] = React.useState({
+        email: "",
+        password: "",
+    })
 
     function handleSubmit(event) {
         event.preventDefault();

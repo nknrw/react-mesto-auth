@@ -10,34 +10,26 @@ import api from "../utils/Api";
 import EditProfilePopup from "./EditProfilePopup";
 import EditAvatarPopup from './EditAvatarPopup';
 import AddPlacePopup from './AddPlacePopup';
+import InfoTooltip from './InfoTooltip';
 
 import Register from "./Register";
 import Login from "./Login";
 import ProtectedRoute from "./ProtectedRoute";
+
+import auth from "../utils/Auth";
 
 export default function App() {
 	const [isEditAvatarPopupOpen, setEditAvatarPopupOpen] = useState(false);
 	const [isEditProfilePopupOpen, setEditProfilePopupOpen] = useState(false);
 	const [isAddPlacePopupOpen, setAddPlacePopupOpen] = useState(false);
 	const [isImagePopupOpen, setIsImagePopupOpen] = useState(false);
+	const [isInfoTooltipOpen, setIsInfoTooltipOpen] = useState(false);
+
 	const [selectedCard, setSelectedCard] = useState(null);
 	const [currentUser, setCurrentUser] = useState({});
 	const [cards, setCards] = useState([]);
 	// const [loggedIn, setLoggedIn] = useState(false);
 
-
-	// useEffect(() => {
-	// 	if (loggedIn) {
-	// 		Promise.all([api.getUserInfo(), api.getInitialCards()])
-	// 			.then(([userInfo, cards]) => {
-	// 				setCurrentUser(userInfo);
-	// 				setCards(cards);
-	// 			})
-	// 			.catch(err => {
-	// 				console.log(err);
-	// 			})
-	// 	}
-	// }, [loggedIn]);
 	useEffect(() => {
 		api.getInitialCards()
 			.then((initialCards) => {
@@ -135,6 +127,40 @@ export default function App() {
 		setSelectedCard(null);
 	}
 
+	function handleRegister(data) {
+		api.register(data)
+			.then(res => {
+				auth.login(res, () => {
+					setCurrentUser(res);
+					closeAllPopups();
+				}).catch(err => {
+					console.log(err);
+				}
+			)
+		}).catch(err => {
+			console.log(err);
+		}
+	)
+	}
+
+	function handleLogin(data) {
+		api.login(data)
+			.then(res => {
+				auth.login(res, () => {
+					setCurrentUser(res);	
+					closeAllPopups();
+				}).catch(err => {
+					console.log(err);
+				}
+			)
+		}).catch(err => {
+			console.log(err);
+		}
+	)
+	}
+
+	
+
     return(
 		<CurrentUserContext.Provider value={currentUser}>
 			<div className='page'>
@@ -187,6 +213,11 @@ export default function App() {
 					isOpen={isImagePopupOpen}
 					onClose={closeAllPopups}>
 				</ImagePopup>
+				{/* Попап удачной или не очень удачной регистрации */}
+				<InfoTooltip 
+					isOpen={isInfoTooltipOpen}
+					onClose={closeAllPopups}
+				/>
 			</div>
 		</CurrentUserContext.Provider>
     )
