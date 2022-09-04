@@ -6,7 +6,6 @@
     border-bottom: 1px #545454 solid;
     padding-top: 45px;
     display: flex;
-    /*justify-items: center;*/
 }
 
 @media screen and (max-width: 767px) {

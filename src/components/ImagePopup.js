@@ -1,7 +1,21 @@
 import React from "react";
 
-export default function ImagePopup({ card, onClose }) {
+export default function ImagePopup({ card, onClose, isOpen }) {
 	const className = `popup popup_fullscreen ${card && "popup_active"}`;
+
+	React.useEffect(() => {
+		const handleEscClose = (e) => {
+			if (e.key === "Escape") {
+			  onClose();
+			}
+		};
+			if (isOpen) {
+				document.addEventListener("keydown", handleEscClose);
+			} else {
+				document.removeEventListener("keydown", handleEscClose);
+			}
+	}, [isOpen, onClose]);
+
 
 	return (
 		<div

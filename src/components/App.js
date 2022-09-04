@@ -1,6 +1,6 @@
 import '../index.css'
 import React, {useEffect, useState} from "react";
-import { useHistory, Route, Switch } from 'react-router-dom';
+import { useHistory, Route, Switch, Redirect } from 'react-router-dom';
 import Header from './Header';
 import Main from './Main';
 import Footer from './Footer'
@@ -24,13 +24,14 @@ export default function App() {
 	const [isAddPlacePopupOpen, setAddPlacePopupOpen] = useState(false);
 	const [isImagePopupOpen, setIsImagePopupOpen] = useState(false);
 	const [isInfoTooltipOpen, setIsInfoTooltipOpen] = useState(false);
+	const [infoTooltipStatus, setInfoTooltipStatus] = useState({});
 
 	const [selectedCard, setSelectedCard] = useState(null);
 	const [currentUser, setCurrentUser] = useState({});
 	const [cards, setCards] = useState([]);
 
 	const [loggedIn, setLoggedIn] = useState(false);
-	const [email, setEmail] = useState('');
+	const [userEmail, setUserEmail] = useState('');
 	const history = useHistory();
 
 	useEffect(() => {
@@ -46,16 +47,6 @@ export default function App() {
 				});
 		}
 	}, [loggedIn]);
-
-	// useEffect(() => {
-	// 	api.getInitialCards()
-	// 		.then((initialCards) => {
-	// 			setCards(initialCards);
-	// 		})
-	// 		.catch((err) => {
-	// 			console.log(err);
-	// 		});
-	// }, []);
 
 	function handleCardLike(card) {
 		const isLiked = card.likes.some((like) => like._id === currentUser._id);
@@ -75,16 +66,6 @@ export default function App() {
 				console.log(err);
 			});
 	}
-
-	// useEffect(() => {
-	// 	api.getUserInfo()
-	// 		.then(res => {
-	// 			setCurrentUser(res);
-	// 		}).catch(err => {
-	// 			console.log(err);
-	// 		}
-	// 	)
-	// }, []);
 
 	function handleEditAvatarPopupClick() {
 		setEditAvatarPopupOpen(!isEditAvatarPopupOpen);
@@ -149,10 +130,12 @@ export default function App() {
 		auth.register(email, password)
 			.then((res) => {
 				setIsInfoTooltipOpen(true);
+				setInfoTooltipStatus(true);
 				history.push('/sign-in');
 				console.log(res);				
 			})
 			.catch((err) => {
+				setInfoTooltipStatus(false);
 				setIsInfoTooltipOpen(true);
 				console.log(err);
 			});
@@ -161,12 +144,13 @@ export default function App() {
 	function handleLogin(email, password) {
 		auth.authorize(email, password)
 			.then((res) => {
-				setEmail(email);
+				setUserEmail(email);
 				localStorage.setItem('jwt', res.token);
 				setLoggedIn(true);
 				history.push('/');
 			})
 			.catch((err) => {
+				setInfoTooltipStatus(false);
 				setIsInfoTooltipOpen(true);
 				console.log(err);
 			});
@@ -178,7 +162,7 @@ export default function App() {
 			auth.getContent(jwt)
 				.then((res) => {
 					setLoggedIn(true);
-					setEmail(res.data.email);
+					setUserEmail(res.data.email);
 					history.push('/');
 				})
 				.catch((err) => {
@@ -187,20 +171,23 @@ export default function App() {
 		}
 	}
 
-	// function handleSignOut() {
-	// 	setLoggedIn(false);
-	// 	localStorage.removeItem('jwt');
-	// 	history.push('/sign-in');
-	// }
+	function handleSignOut() {
+		setLoggedIn(false);
+		localStorage.removeItem('jwt');
+		history.push('/sign-in');
+	}
 
     return(
 		<CurrentUserContext.Provider value={currentUser}>
 			<div className='page'>
-				<Header />
+				<Header 
+				email={userEmail}
+				onSignOut={handleSignOut}/>
 
 				<Switch>
 					<ProtectedRoute
 						exact path='/'
+						loggedIn={loggedIn}
 						component={Main}
 						onEditProfile={handleEditProfilePopupClick}
 						onEditAvatar={handleEditAvatarPopupClick}
@@ -216,6 +203,9 @@ export default function App() {
 					</Route>
 					<Route path='/sign-in'>
 						<Login onLogin={handleLogin} />
+					</Route>
+					<Route>
+						{loggedIn ? <Redirect to='/' /> : <Redirect to='/sign-in' />}
 					</Route>
 				</Switch>
 
@@ -247,9 +237,11 @@ export default function App() {
 					onClose={closeAllPopups}>
 				</ImagePopup>
 				{/* Попап удачной или не очень удачной регистрации */}
-				<InfoTooltip 
+				<InfoTooltip
+					// loggedIn={loggedIn}
 					isOpen={isInfoTooltipOpen}
 					onClose={closeAllPopups}
+					onInfoTooltipStatus={infoTooltipStatus}
 				/>
 			</div>
 		</CurrentUserContext.Provider>
