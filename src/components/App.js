@@ -1,6 +1,6 @@
 import '../index.css'
 import React, {useEffect, useState} from "react";
-import { BrowserRouter, Route, Switch, Redirect, withRouter } from 'react-router-dom';
+import { useHistory, Route, Switch } from 'react-router-dom';
 import Header from './Header';
 import Main from './Main';
 import Footer from './Footer'
@@ -16,7 +16,7 @@ import Register from "./Register";
 import Login from "./Login";
 import ProtectedRoute from "./ProtectedRoute";
 
-import auth from "../utils/Auth";
+import * as auth from "../utils/Auth";
 
 export default function App() {
 	const [isEditAvatarPopupOpen, setEditAvatarPopupOpen] = useState(false);
@@ -28,17 +28,34 @@ export default function App() {
 	const [selectedCard, setSelectedCard] = useState(null);
 	const [currentUser, setCurrentUser] = useState({});
 	const [cards, setCards] = useState([]);
-	// const [loggedIn, setLoggedIn] = useState(false);
+
+	const [loggedIn, setLoggedIn] = useState(false);
+	const [email, setEmail] = useState('');
+	const history = useHistory();
 
 	useEffect(() => {
-		api.getInitialCards()
-			.then((initialCards) => {
-				setCards(initialCards);
-			})
-			.catch((err) => {
-				console.log(err);
-			});
-	}, []);
+		tokenCheck();
+		if (loggedIn) {
+			Promise.all([api.getUserInfo(), api.getInitialCards()])
+				.then(([userData, initialCards]) => {
+					setCurrentUser(userData);
+					setCards(initialCards);
+				})
+				.catch((err) => {
+					console.log(err);
+				});
+		}
+	}, [loggedIn]);
+
+	// useEffect(() => {
+	// 	api.getInitialCards()
+	// 		.then((initialCards) => {
+	// 			setCards(initialCards);
+	// 		})
+	// 		.catch((err) => {
+	// 			console.log(err);
+	// 		});
+	// }, []);
 
 	function handleCardLike(card) {
 		const isLiked = card.likes.some((like) => like._id === currentUser._id);
@@ -59,15 +76,15 @@ export default function App() {
 			});
 	}
 
-	useEffect(() => {
-		api.getUserInfo()
-			.then(res => {
-				setCurrentUser(res);
-			}).catch(err => {
-				console.log(err);
-			}
-		)
-	}, []);
+	// useEffect(() => {
+	// 	api.getUserInfo()
+	// 		.then(res => {
+	// 			setCurrentUser(res);
+	// 		}).catch(err => {
+	// 			console.log(err);
+	// 		}
+	// 	)
+	// }, []);
 
 	function handleEditAvatarPopupClick() {
 		setEditAvatarPopupOpen(!isEditAvatarPopupOpen);
@@ -125,41 +142,56 @@ export default function App() {
 		setAddPlacePopupOpen(false);
 		setIsImagePopupOpen(false);
 		setSelectedCard(null);
+		setIsInfoTooltipOpen(false);
 	}
 
-	function handleRegister(data) {
-		api.register(data)
-			.then(res => {
-				auth.login(res, () => {
-					setCurrentUser(res);
-					closeAllPopups();
-				}).catch(err => {
+	function handleRegister(email, password) {
+		auth.register(email, password)
+			.then((res) => {
+				setIsInfoTooltipOpen(true);
+				history.push('/sign-in');
+				console.log(res);				
+			})
+			.catch((err) => {
+				setIsInfoTooltipOpen(true);
+				console.log(err);
+			});
+	}
+
+	function handleLogin(email, password) {
+		auth.authorize(email, password)
+			.then((res) => {
+				setEmail(email);
+				localStorage.setItem('jwt', res.token);
+				setLoggedIn(true);
+				history.push('/');
+			})
+			.catch((err) => {
+				setIsInfoTooltipOpen(true);
+				console.log(err);
+			});
+	}
+
+	function tokenCheck() {
+		const jwt = localStorage.getItem('jwt');
+		if (jwt) {
+			auth.getContent(jwt)
+				.then((res) => {
+					setLoggedIn(true);
+					setEmail(res.data.email);
+					history.push('/');
+				})
+				.catch((err) => {
 					console.log(err);
-				}
-			)
-		}).catch(err => {
-			console.log(err);
+				});
 		}
-	)
 	}
 
-	function handleLogin(data) {
-		api.login(data)
-			.then(res => {
-				auth.login(res, () => {
-					setCurrentUser(res);	
-					closeAllPopups();
-				}).catch(err => {
-					console.log(err);
-				}
-			)
-		}).catch(err => {
-			console.log(err);
-		}
-	)
-	}
-
-	
+	// function handleSignOut() {
+	// 	setLoggedIn(false);
+	// 	localStorage.removeItem('jwt');
+	// 	history.push('/sign-in');
+	// }
 
     return(
 		<CurrentUserContext.Provider value={currentUser}>
@@ -167,23 +199,24 @@ export default function App() {
 				<Header />
 
 				<Switch>
+					<ProtectedRoute
+						exact path='/'
+						component={Main}
+						onEditProfile={handleEditProfilePopupClick}
+						onEditAvatar={handleEditAvatarPopupClick}
+						onAddPlace={handleAddPlacePopupClick}
+						onCardClick={handleCardClick}
+						cards={cards}
+						onCardLike={handleCardLike}
+						onCardDelete={handleCardDelete}
+						>
+					</ProtectedRoute>
 					<Route path='/sign-up'>
-						<Register />
+						<Register onRegister={handleRegister} />
 					</Route>
 					<Route path='/sign-in'>
-						<Login />
+						<Login onLogin={handleLogin} />
 					</Route>
-					<ProtectedRoute exact path='/'>
-						<Main
-							onEditProfile={handleEditProfilePopupClick}
-							onEditAvatar={handleEditAvatarPopupClick}
-							onAddPlace={handleAddPlacePopupClick}
-							onCardClick={handleCardClick}
-							cards={cards}
-							onCardLike={handleCardLike}
-							onCardDelete={handleCardDelete}
-						/>
-					</ProtectedRoute>
 				</Switch>
 
 				<Footer />

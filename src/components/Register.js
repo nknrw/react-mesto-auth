@@ -1,40 +1,53 @@
 import React from "react";
 import { Link, withRouter } from "react-router-dom";
-// import auth from "../utils/Auth.js";
 
 function Register(props) {
-    const [profileData, setProfileData] = React.useState({
-        name: "",
-        about: "",
-        avatar: "",
-        email: "",
-        password: "",
-    })
+    const [email, setEmail] = React.useState("");
+    const [password, setPassword] = React.useState("");
+
+    function handleChange(event) {
+        if (event.target.id === 'email-input') {
+            setEmail(event.target.value);
+        } else {
+            setPassword(event.target.value);
+        }
+    }
 
     function handleSubmit(event) {
         event.preventDefault();
-        auth.register(profileData)
-            .then(() => {
+        props.onRegister(email, password);
+        setEmail("");
+        setPassword("");
+    }
 
     return (
         <section className="auth">
             <div className="auth__container">
                 <h1 className="auth__title">Регистрация</h1>
-                <form className="auth__form" onSubmit={handleSubmit}>
-                    <input 
+                <form 
+                    className="auth__form"
+                    name="register"
+                    id="register-form" 
+                    onSubmit={handleSubmit}>
+                    <input
+                        id="email-input"
                         className="auth__input" 
-                        autoComplete='off' 
                         type="email" 
                         name="email" 
                         placeholder="Email"
-                        onChange={handleChange}/>
+                        defaultValue={email || ''}
+                        onChange={handleChange}
+                        required
+                    />
                     <input 
                         className="auth__input" 
-                        autoComplete='off' 
                         type="password" 
                         name="password" 
                         placeholder="Пароль"
-                        onChange={handleChange}/>
+                        defaultValue={password || ''}
+                        onChange={handleChange}
+                        required
+                    />
                     <button className="auth__submit-button" type="submit">Зарегистрироваться</button>
                 </form>
                 <Link className="auth__link" to="/sign-in">Уже зарегистрированы? Войти</Link>
